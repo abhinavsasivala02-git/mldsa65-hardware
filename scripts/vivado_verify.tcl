@@ -35,18 +35,18 @@ foreach f $rtl_files { puts $fp $f }
 close $fp
 
 set fp [open ./xsim_tb_files.txt w]
-puts $fp "tb/tb_mldsa_verify_kat.v"
+puts $fp "sim/tb/tb_mldsa_verify_kat.v"
 close $fp
 
 puts "=== STEP 1: xvlog (RTL) ==="
-if {[catch {exec xvlog --work xsim -i rtl/pkg -i tb -f ./xsim_files.txt} err]} {
+if {[catch {exec xvlog --work xsim -i rtl/pkg -i sim/tb -f ./xsim_files.txt} err]} {
     puts "ERROR: xvlog (rtl) failed:\n$err"
     exit 1
 }
 puts "=== STEP 1: xvlog (RTL) OK ==="
 
 puts "=== STEP 2: xvlog (TB) ==="
-if {[catch {exec xvlog --work xsim -sv -i rtl/pkg -i tb -f ./xsim_tb_files.txt} err]} {
+if {[catch {exec xvlog --work xsim -sv -i rtl/pkg -i sim/tb -f ./xsim_tb_files.txt} err]} {
     puts "ERROR: xvlog (tb) failed:\n$err"
     exit 1
 }

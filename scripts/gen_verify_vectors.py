@@ -18,10 +18,10 @@
 # Generate reference verify vectors for the ML-DSA-65 verify KAT testbench.
 #
 # For each of the 5 KAT vectors this emits:
-#   - tb/ref_vf_pk_<i>.mem   : pk bytes (one hex byte per line, 1952)
-#   - tb/ref_vf_sig_<i>.mem  : signature bytes (one hex byte per line, 3309)
-#   - tb/ref_vf_mu_<i>.mem   : mu bytes (one hex byte per line, 64)
-#   - tb/ref_vf_rho_<i>.mem  : rho bytes (one hex byte per line, 32)
+#   - sim/tb/ref_vf_pk_<i>.mem   : pk bytes (one hex byte per line, 1952)
+#   - sim/tb/ref_vf_sig_<i>.mem  : signature bytes (one hex byte per line, 3309)
+#   - sim/tb/ref_vf_mu_<i>.mem   : mu bytes (one hex byte per line, 64)
+#   - sim/tb/ref_vf_rho_<i>.mem  : rho bytes (one hex byte per line, 32)
 #
 # The signature is the reference sign() output for the standard KAT seed,
 # so verify should return valid=1. A companion tamper test flips one byte.
@@ -33,7 +33,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mldsa_ref import keypair, sign, H, CRHBYTES
 
 NUM_VEC = 5
-TB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'tb')
+TB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'sim', 'tb')
 
 
 def make_xi(i):
@@ -105,7 +105,7 @@ def main():
             if ctilde != ctp:
                 ok = False
         print('vec %d: sig=%d pk=%d  ref-verify=%s' % (i, len(sig), len(pk), 'PASS' if ok else 'FAIL'))
-    print('Wrote tb/ref_vf_{pk,sig,mu,rho}_<i>.mem')
+    print('Wrote sim/tb/ref_vf_{pk,sig,mu,rho}_<i>.mem')
 
 
 if __name__ == '__main__':

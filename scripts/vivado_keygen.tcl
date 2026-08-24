@@ -32,15 +32,15 @@ foreach f $rtl_files { puts $fp $f }
 close $fp
 
 set fp [open ./xsim_tb_files.txt w]
-puts $fp "tb/tb_keygen_kat.v"
+puts $fp "sim/tb/tb_keygen_kat.v"
 close $fp
 
-if {[catch {exec xvlog --work xsim -i rtl/pkg -i tb -f ./xsim_files.txt} err]} {
+if {[catch {exec xvlog --work xsim -i rtl/pkg -i sim/tb -f ./xsim_files.txt} err]} {
     puts "ERROR: xvlog (rtl) failed: $err"
     exit 1
 }
 
-if {[catch {exec xvlog --work xsim -sv -i rtl/pkg -i tb -f ./xsim_tb_files.txt} err]} {
+if {[catch {exec xvlog --work xsim -sv -i rtl/pkg -i sim/tb -f ./xsim_tb_files.txt} err]} {
     puts "ERROR: xvlog (tb) failed: $err"
     exit 1
 }

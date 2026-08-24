@@ -138,8 +138,8 @@ module tb_mldsa_sign_kat;
         input integer vec_idx;
         integer k;
         begin
-            $readmemh($sformatf("tb/ref_pk_%0d.mem", vec_idx), ref_pk);
-            $readmemh($sformatf("tb/ref_sk_%0d.mem", vec_idx), ref_sk);
+            $readmemh($sformatf("sim/tb/ref_pk_%0d.mem", vec_idx), ref_pk);
+            $readmemh($sformatf("sim/tb/ref_sk_%0d.mem", vec_idx), ref_sk);
             for (k = 0; k < 1952; k = k + 1)
                 wr(16'h0800 + k, ref_pk[k]);
             for (k = 0; k < 4032; k = k + 1)

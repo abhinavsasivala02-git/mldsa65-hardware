@@ -17,14 +17,14 @@
 #!/usr/bin/env python3
 # Generate ML-DSA-65 signing KAT vectors for the RTL testbench.
 #
-# For each of the 5 seeds used in tb/mldsa65_kat_vectors.vh (xi =
+# For each of the 5 seeds used in sim/tb/mldsa65_kat_vectors.vh (xi =
 # 0x20*i..0x20*i+0x1f), this script:
 #   1. runs keypair(xi)       -> sk (also populates sk_ram in HW via keygen)
 #   2. picks a fixed rnd/msg
 #   3. computes mu = H(tr + 0x0000 + msg)
 #   4. computes sign(sk, msg, rnd) -> expected sig and kappa
 # and emits:
-#   - tb/mldsa65_sign_vectors.vh     (KATx_RND / KATx_MU / KATx_KAPPA)
+#   - sim/tb/mldsa65_sign_vectors.vh     (KATx_RND / KATx_MU / KATx_KAPPA)
 #   - expected/sig_<i>.hex            (sig bytes as 32-bit LE words, 828 words,
 #                                      matching the tb_mldsa_sign_kat dump)
 #
@@ -39,7 +39,7 @@ from mldsa_ref import (keypair, sign, H, SIG_BYTES, RNDBYTES, TRBYTES)
 
 NUM_VEC = 5
 EXPECTED_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'expected')
-TB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'tb')
+TB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'sim', 'tb')
 
 
 def make_xi(i):
@@ -107,7 +107,7 @@ def main():
     with open(os.path.join(TB_DIR, 'mldsa65_sign_vectors.vh'), 'w') as f:
         f.write('\n'.join(lines))
 
-    print('Wrote tb/mldsa65_sign_vectors.vh and expected/sig_*.hex')
+    print('Wrote sim/tb/mldsa65_sign_vectors.vh and expected/sig_*.hex')
 
 
 if __name__ == '__main__':

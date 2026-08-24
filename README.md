@@ -4,15 +4,57 @@ RTL implementation of an ML-DSA-65 (FIPS 204) lattice-based digital-signature
 core with an AXI4-Lite slave interface, plus a Python reference model and
 Known-Answer-Test (KAT) simulation flow for Vivado 2023.2.
 
+## How ML-DSA works
+
+ML-DSA (FIPS 204, based on CRYSTALS-Dilithium) is NIST's post-quantum
+digital-signature scheme. Its security rests on the hardness of finding short
+vectors in module lattices (Module-LWE / Module-SIS) — a problem believed hard
+even for quantum computers. The **ML-DSA-65** parameter set (K=6, L=5) operates
+on polynomials of degree 255 over the ring
+`R_q = Z_q[x]/(x^256 + 1)` with `q = 8380417` (23-bit coefficients). The scheme
+has three phases:
+
+**1. Key generation.** A seed `xi` is expanded by SHAKE-256 into `rho`
+(public seed), `rho'` (secret seed) and `K` (signing key). The matrix `A` is
+derived deterministically from `rho` via SHAKE-128. Two short secret vectors
+`s1` (L polys) and `s2` (K polys) are sampled from `rho'`. The public vector is
+`t = A·s1 + s2`, then split into high bits `t1` (public) and low bits `t0`
+(secret). The public key is `pk = (rho, t1)`; the secret key is
+`sk = (rho, K, tr, s1, s2, t0)` with `tr = H(pk)` (64 bytes).
+
+**2. Signing (rejection-sampling loop).** The message is hashed to
+`mu = H(tr || 0x00 || M)`, and `rhoprime = H(K || rnd || mu)` where `rnd` is a
+32-byte randomizer. The core loop tries increasing nonces `kappa`:
+`y = ExpandMask(rhoprime, kappa)` is a short masking vector; `w = A·y`;
+each `w` coefficient is decomposed into high/low parts `(w1, w0)`; the challenge
+`c~ = H(mu || w1)` (48 bytes) is hashed into a sparse polynomial `c`
+(exactly 49 `±1` terms); then `z = y + c·s1`, `r0 = w0 − c·s2`, `ct0 = c·t0`.
+The candidate is **accepted** only if all norms stay in bounds
+(`||z||∞ < γ1−β`, `||r0||∞ < γ2−β`, `||ct0||∞ < γ2`) and the hint fits
+(`ω` entries max); then `h = makeHint(...)` and the signature is
+`sig = (c~, z, h)`. Any failing check retries with the next `kappa`. This loop
+is why signing is variable-latency (the `kappa` count).
+
+**3. Verification.** Recompute `mu`, derive `A`, and recompute
+`w1' = useHint(A·z − c·t1·2^d, h)`; reject if `||z||∞ ≥ γ1−β` or the hint
+count is invalid; accept iff `H(mu || w1') == c~`.
+
+Under the hood the arithmetic uses a number-theoretic transform (NTT) in the
+`Z_q` Montgomery domain for fast polynomial multiplication, and SHAKE-128/256
+(Keccak-f[1600]) plus rejection sampling for all randomness and hashing. The
+hardware instantiates dedicated NTT, decomposition (`decompose`/`power2round`/
+`make_hint`/`use_hint`), sampling, and Keccak blocks, orchestrated by the
+`keygen_ctrl` / `sign_ctrl` / `verify_ctrl` FSM controllers.
+
 ## Status
 
 | Subsystem   | Status                          | Evidence |
 |-------------|---------------------------------|----------|
-| KeyGen      | **PASS 5/5 KAT vectors**        | `scripts/vivado_keygen.tcl` on `tb/tb_keygen_kat.v` |
+| KeyGen      | **PASS 5/5 KAT vectors**        | `scripts/vivado_keygen.tcl` on `sim/tb/tb_keygen_kat.v` |
 | NTT core    | Verified (10,752 cycles / NTT)  | correct latency + keygen byte-exact |
-| Sign        | **PASS 5/5 KAT vectors**        | `scripts/vivado_sim.tcl` on `tb/tb_mldsa_sign_kat.v`, `scripts/compare_sigs.py` |
-| Verify      | **PASS 5/5 KAT vectors**        | `scripts/vivado_verify.tcl` on `tb/tb_mldsa_verify_kat.v` |
-| **NIST end-to-end** | **PASS 20/20 vectors**    | `joint_design/vivado_nist20.tcl` on `joint_design/tb_mldsa_nist_kat.v` (official `constraints/PQCsignKAT_4032.rsp`); KeyGen + Sign + Verify all byte-compared against NIST `ref_*` including the signature |
+| Sign        | **PASS 5/5 KAT vectors**        | `scripts/vivado_sim.tcl` on `sim/tb/tb_mldsa_sign_kat.v`, `scripts/compare_sigs.py` |
+| Verify      | **PASS 5/5 KAT vectors**        | `scripts/vivado_verify.tcl` on `sim/tb/tb_mldsa_verify_kat.v` |
+| **NIST end-to-end** | **PASS 20/20 vectors**    | `joint_design/vivado_nist20.tcl` on `joint_design/tb_mldsa_nist_kat.v` (official NIST KAT vectors, pre-generated in `sim/tb/nist/`); KeyGen + Sign + Verify all byte-compared against NIST `ref_*` including the signature |
 
 ### Notes / known issues
 - The sign run must be simulated in **Vivado/xsim only** (see flow below).
@@ -26,7 +68,7 @@ Known-Answer-Test (KAT) simulation flow for Vivado 2023.2.
 ## Directory layout
 
 ```
-constraints/    FPGA constraints (mldsa_top.sdc) and NIST PQC sign KAT .rsp
+constraints/    FPGA constraints (mldsa_top.sdc)
 rtl/            RTL sources
   pkg/          parameters (mldsa_params.vh), zeta ROM
   math/         mod_add, montgomery_mult, butterfly_unit, ntt_core, poly_arith
@@ -35,7 +77,7 @@ rtl/            RTL sources
   sample/       rej_uniform, rej_bounded, sample_in_ball
   mem/          poly_ram, poly_ram_tdp
   mldsa/        mldsa_top (AXI4-Lite), keygen_ctrl, sign_ctrl, verify_ctrl
-tb/             testbenches, KAT vectors (.vh), reference key bytes (.mem)
+sim/tb/         testbenches, KAT vectors (.vh), reference key bytes (.mem)
 scripts/        Vivado tcl drivers, Python reference model + compare tools
   expected/     reference signature hex files (sig_<i>.hex)
 syn/            synthesis scripts (mldsa.tcl, syn_mldsa.tcl, constraints.sdc)
@@ -78,18 +120,18 @@ Poll `xsim.log` in the project root for results.
 ```tcl
 source scripts/vivado_keygen.tcl
 ```
-Runs `tb/tb_keygen_kat.v`, all 5 vectors, prints `All KAT vectors PASSED!`.
+Runs `sim/tb/tb_keygen_kat.v`, all 5 vectors, prints `All KAT vectors PASSED!`.
 
 ### 2. Sign KAT (current work)
 ```tcl
 source scripts/vivado_sim.tcl
 ```
-Runs `tb/tb_mldsa_sign_kat.v`. For each of the 5 vectors it:
-1. Loads the standard reference keys (`tb/ref_pk_<i>.mem` / `tb/ref_sk_<i>.mem`,
+Runs `sim/tb/tb_mldsa_sign_kat.v`. For each of the 5 vectors it:
+1. Loads the standard reference keys (`sim/tb/ref_pk_<i>.mem` / `sim/tb/ref_sk_<i>.mem`,
    generated by `scripts/gen_sign_keys.py` from `scripts/mldsa_ref.py`) into
    `pk_ram` / `sk_ram` via AXI byte writes — no internal keygen.
 2. Forwards `rho`/`K` to registers and loads `rnd`/`mu` from
-   `tb/mldsa65_sign_vectors.vh`.
+   `sim/tb/mldsa65_sign_vectors.vh`.
 3. Starts sign (`CTRL[1]`), waits for `sig_valid`, dumps `sig_ram` to
    `sig_<i>.hex` (828 32-bit words).
 
@@ -104,9 +146,9 @@ python scripts\compare_sigs.py 5
 ```tcl
 source scripts/vivado_verify.tcl
 ```
-Runs `tb/tb_mldsa_verify_kat.v`. For each of the 5 vectors it loads the
-reference pk/rho/mu (`tb/ref_vf_*_<i>.mem`) and signature
-(`tb/ref_vf_sig_<i>.mem`, generated by `scripts/gen_verify_vectors.py`) via AXI,
+Runs `sim/tb/tb_mldsa_verify_kat.v`. For each of the 5 vectors it loads the
+reference pk/rho/mu (`sim/tb/ref_vf_*_<i>.mem`) and signature
+(`sim/tb/ref_vf_sig_<i>.mem`, generated by `scripts/gen_verify_vectors.py`) via AXI,
 starts verify (`CTRL[2]`), and checks that a valid signature is accepted
 (`valid=1`) and tampered ones are rejected (`valid=0`) at two z-byte positions
 (byte 100, and byte 700 which is in poly 1 and exercises the full-coverage
@@ -120,10 +162,10 @@ source scripts/vivado_ntt_check.tcl
 
 ## Reference model / vector generation
 
-- `scripts/mldsa_ref.py` — pure-Python ML-DSA-65 (`keypair`, `sign`); needs the
-  reference `.rsp`/implementation to be seeded with deterministic randomness
-  (xi = `bytes(range(0x20*i, 0x20*i+0x20))`).
-- `scripts/gen_sign_keys.py` — emits `tb/ref_pk_<i>.mem` / `tb/ref_sk_<i>.mem`
+- `scripts/mldsa_ref.py` — pure-Python ML-DSA-65 (`keypair`, `sign`); reproduces
+  the official NIST KAT vectors (seeded from the AES-CTR-DRBG), and serves as
+  the ground truth for the local KAT sets (xi = `bytes(range(0x20*i, 0x20*i+0x20))`).
+- `scripts/gen_sign_keys.py` — emits `sim/tb/ref_pk_<i>.mem` / `sim/tb/ref_sk_<i>.mem`
   (one hex byte per line) from the reference keypair.
 - `scripts/gen_sign_vectors.py` — emits KAT rnd/mu vectors and
   `scripts/expected/sig_<i>.hex` ground truth.

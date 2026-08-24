@@ -18,8 +18,8 @@
 # Generate reference ML-DSA-65 pk/sk byte files for the sign KAT testbench.
 #
 # For each of the 5 KAT seeds (xi = 0x20*i .. 0x20*i+0x1f), this emits:
-#   - tb/ref_pk_<i>.mem   : pk bytes, one hex byte per line
-#   - tb/ref_sk_<i>.mem   : sk bytes, one hex byte per line
+#   - sim/tb/ref_pk_<i>.mem   : pk bytes, one hex byte per line
+#   - sim/tb/ref_sk_<i>.mem   : sk bytes, one hex byte per line
 #
 # These are the standard reference keys from scripts/mldsa_ref.py (keypair).
 # The sign TB loads them into pk_ram (0x0800) / sk_ram (0x1000) via AXI and
@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mldsa_ref import keypair
 
 NUM_VEC = 5
-TB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'tb')
+TB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'sim', 'tb')
 
 
 def make_xi(i):
@@ -49,7 +49,7 @@ def main():
             for b in sk:
                 f.write('%02x\n' % b)
         print('vec %d: pk=%d sk=%d tr=%s' % (i, len(pk), len(sk), tr.hex()))
-    print('Wrote tb/ref_pk_<i>.mem and tb/ref_sk_<i>.mem')
+    print('Wrote sim/tb/ref_pk_<i>.mem and sim/tb/ref_sk_<i>.mem')
 
 
 if __name__ == '__main__':

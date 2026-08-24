@@ -27,7 +27,7 @@
 # (one .mem set per case) so the RTL KAT can be driven end-to-end with the
 # SAME inputs NIST used, and compared byte-exact against NIST's pk/sk/sm.
 #
-# Emits (into tb/nist/):
+# Emits (into sim/tb/nist/):
 #   <i>/xi_<i>.mem  pk_<i>.mem  sk_<i>.mem  rnd_<i>.mem  mu_<i>.mem  sig_<i>.mem
 # plus nist_vectors.vh (per-case KAPPA, and file list).
 #
@@ -41,7 +41,7 @@ from mldsa_ref import (parse_rsp, DRBG, keypair, sign, H,
                        SEEDBYTES, RNDBYTES, TRBYTES, SIG_BYTES)
 
 RSP   = r'constraints/PQCsignKAT_4032.rsp'
-OUT   = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'tb', 'nist')
+OUT   = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'sim', 'tb', 'nist')
 NUM   = 100
 
 
