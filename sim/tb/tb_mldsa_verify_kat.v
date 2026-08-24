@@ -88,10 +88,10 @@ module tb_mldsa_verify_kat;
         input integer vec_idx;
         integer k;
         begin
-            $readmemh($sformatf("sim/tb/ref_vf_pk_%0d.mem",  vec_idx), ref_pk);
-            $readmemh($sformatf("sim/tb/ref_vf_sig_%0d.mem", vec_idx), ref_sig);
-            $readmemh($sformatf("sim/tb/ref_vf_mu_%0d.mem",  vec_idx), ref_mu);
-            $readmemh($sformatf("sim/tb/ref_vf_rho_%0d.mem", vec_idx), ref_rho);
+            $readmemh($sformatf("sim/mem/ref_vf_pk_%0d.mem",  vec_idx), ref_pk);
+            $readmemh($sformatf("sim/mem/ref_vf_sig_%0d.mem", vec_idx), ref_sig);
+            $readmemh($sformatf("sim/mem/ref_vf_mu_%0d.mem",  vec_idx), ref_mu);
+            $readmemh($sformatf("sim/mem/ref_vf_rho_%0d.mem", vec_idx), ref_rho);
 
             // pk -> pk_ram @0x0800 (byte)
             for (k = 0; k < 1952; k = k + 1)

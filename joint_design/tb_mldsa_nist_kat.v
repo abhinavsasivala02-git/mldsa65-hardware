@@ -144,17 +144,17 @@ module tb_mldsa_nist_kat;
     reg [7:0] ref_mu  [0:63];
     reg [7:0] ref_sig [0:3308];
 
-        // Load NIST vector <i> from sim/tb/nist/<i>/*.mem
+        // Load NIST vector <i> from sim/mem/nist/<i>/*.mem
         task load_nist_vec;
         input integer i;
         integer k;
         begin
-            $readmemh($sformatf("sim/tb/nist/%0d/xi_%0d.mem", i, i), ref_xi);
-            $readmemh($sformatf("sim/tb/nist/%0d/pk_%0d.mem", i, i), ref_pk);
-            $readmemh($sformatf("sim/tb/nist/%0d/sk_%0d.mem", i, i), ref_sk);
-            $readmemh($sformatf("sim/tb/nist/%0d/rnd_%0d.mem", i, i), ref_rnd);
-            $readmemh($sformatf("sim/tb/nist/%0d/mu_%0d.mem", i, i), ref_mu);
-            $readmemh($sformatf("sim/tb/nist/%0d/sig_%0d.mem", i, i), ref_sig);
+            $readmemh($sformatf("sim/mem/nist/%0d/xi_%0d.mem", i, i), ref_xi);
+            $readmemh($sformatf("sim/mem/nist/%0d/pk_%0d.mem", i, i), ref_pk);
+            $readmemh($sformatf("sim/mem/nist/%0d/sk_%0d.mem", i, i), ref_sk);
+            $readmemh($sformatf("sim/mem/nist/%0d/rnd_%0d.mem", i, i), ref_rnd);
+            $readmemh($sformatf("sim/mem/nist/%0d/mu_%0d.mem", i, i), ref_mu);
+            $readmemh($sformatf("sim/mem/nist/%0d/sig_%0d.mem", i, i), ref_sig);
         end
     endtask
 
