@@ -68,7 +68,6 @@ hardware instantiates dedicated NTT, decomposition (`decompose`/`power2round`/
 ## Directory layout
 
 ```
-constraints/    FPGA constraints (mldsa_top.sdc)
 rtl/            RTL sources
   pkg/          parameters (mldsa_params.vh), zeta ROM
   math/         mod_add, montgomery_mult, butterfly_unit, ntt_core, poly_arith
