@@ -99,20 +99,51 @@ syn/            synthesis scripts (mldsa.tcl, syn_mldsa.tcl, constraints.sdc)
 0x3000-0x34EC  sig_ram    (3309 bytes)
 ```
 
-## Simulation notes
+## How to run (Vivado 2023.2, batch, from the project root)
 
-- Run the testbenches in **Vivado 2023.2** (xsim). The testbenches load the
-  pre-generated reference data (`sim/mem/`) by relative path, so run xsim from
-  the project root.
-- `joint_design/tb_mldsa_nist_kat.v` runs the NIST end-to-end KAT (20/20
-  verified); it is chunked into 10-vector slices to avoid the xsim long-run
-  kernel crash. The sign run is slow and must be simulated in xsim only.
-- The reference vectors in `sim/mem/` (signatures, keys, mu/rnd, and the NIST
-  `sim/mem/nist/` packs) were generated from the official NIST KAT and are
-  committed so the KATs run out-of-the-box.
+There are no driver scripts anymore; call the simulator directly. First set the
+RTL source list once:
 
-## Tool notes
+```tcl
+set RTL [list \
+  rtl/pkg/mldsa_params.vh rtl/pkg/zeta_rom.v rtl/math/montgomery_mult.v \
+  rtl/math/mod_add.v rtl/math/butterfly_unit.v rtl/math/ntt_core.v rtl/math/poly_arith.v \
+  rtl/decompose/power2round.v rtl/decompose/decompose.v rtl/decompose/make_hint.v rtl/decompose/use_hint.v \
+  rtl/mem/poly_ram_tdp.v rtl/mem/poly_ram.v rtl/keccak/keccak_f1600.v rtl/keccak/keccak_round.v \
+  rtl/keccak/shake_unified.v rtl/mldsa/keygen_ctrl.v rtl/mldsa/sign_ctrl.v rtl/mldsa/verify_ctrl.v \
+  rtl/mldsa/mldsa_top.v]
+```
+
+Each KAT = compile → elaborate → run. For example **KeyGen**:
+
+```tcl
+xvlog --work xsim -i rtl/pkg -i sim/mem $RTL sim/tb/tb_keygen_kat.v
+xelab -debug typical -L xsim xsim.tb_keygen_kat -s kg_sim
+xsim -R kg_sim
+```
+
+- **Sign** — `... xvlog ... $RTL sim/tb/tb_mldsa_sign_kat.v` → `xelab ... xsim.tb_mldsa_sign_kat -s sg_sim` → `xsim -R sg_sim`. Must run in xsim only (slow).
+- **Verify** — swap in `sim/tb/tb_mldsa_verify_kat.v`, elaborate `xsim.tb_mldsa_verify_kat`.
+- **NTT check** — use only the NTT-relevant RTL plus `-d USE_S1_DATA` on `sim/tb/tb_ntt_check.v`.
+- **NIST end-to-end** — compile `joint_design/tb_mldsa_nist_kat.v` with extra include dirs
+  `-i rtl/pkg -i sim/mem -i sim/mem/nist`, elaborate `xsim.tb_mldsa_nist_kat`, then
+  run in 10-vector slices to avoid the xsim long-run crash:
+
+  ```tcl
+  xsim -R nist_sim -testplusarg NIST_START=0 -testplusarg NIST_END=9
+  xsim -R nist_sim -testplusarg NIST_START=10 -testplusarg NIST_END=19
+  ```
+
+The testbenches load their data by relative path from `sim/mem/` (e.g.
+`sim/mem/ref_pk_0.mem`, `sim/mem/nist/0/pk_0.mem`) via `$readmemh`, so always run
+from the project root. The NIST vectors were verified byte-exact (20/20), and
+KeyGen/Sign/Verify each match the reference byte-for-byte.
+
+### Tool notes
 
 - Vivado 2023.2 path: `D:\vivado\2023.2\bin\vivado.bat`.
 - Do not run more than one batch Vivado at a time in this folder: concurrent
   instances fight over `./xsim`, `xsim.log` and `xsim_files.txt`.
+- The batch flow regenerates `./xsim`, `xsim.log`, `xelab.*`, `xvlog.*` at the
+  project root on every run; these are disposable build artifacts.
+- iverilog is not used for verification of this design.
