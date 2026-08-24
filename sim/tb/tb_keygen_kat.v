@@ -28,8 +28,9 @@ module tb_keygen_kat;
     initial ACLK = 0;
     always #(CLK_PERIOD/2) ACLK = ~ACLK;
 
-        // Include KAT reference vectors
-        `include "mldsa65_kat_vectors.vh"
+// Include KAT reference vectors
+`include "mldsa65_kat_vectors.vh"
+`include "mldsa65_ref_kat0.vh"
 
                 reg          wr_en;
     reg  [15:0]  wr_addr;
@@ -160,8 +161,7 @@ module tb_keygen_kat;
         end
     endtask
 
-                    reg rho_match;
-    task verify_pk_rho;
+                    reg rho_match;    task verify_pk_rho;
         input [255:0] expected_rho;
         reg [255:0] actual_rho;
         reg [31:0] word;
@@ -189,6 +189,44 @@ module tb_keygen_kat;
                         i = 8;                      end
                 end
             end
+        end
+    endtask
+
+    reg full_match;
+    integer fk_i;
+    reg [31:0] fk_w;
+    task check_full_key;
+        input integer vec_idx;
+        integer k2;
+        reg [31:0] w2;
+        integer mism;
+        begin
+            full_match = 1'b1;
+            mism = 0;
+            for (k2 = 0; k2 < 1952; k2 = k2 + 1) begin
+                rd(16'h0800 + (k2 & ~3), w2);
+                if (w2[(k2 & 3)*8 +: 8] !== KAT0_PK[8*k2 +: 8]) begin
+                    if (mism < 3)
+                        $display("    pk byte %0d: got %02x exp %02x",
+                                 k2, w2[(k2 & 3)*8 +: 8], KAT0_PK[8*k2 +: 8]);
+                    mism = mism + 1;
+                    full_match = 1'b0;
+                end
+            end
+            for (k2 = 0; k2 < 4032; k2 = k2 + 1) begin
+                rd(16'h1000 + (k2 & ~3), w2);
+                if (w2[(k2 & 3)*8 +: 8] !== KAT0_SK[8*k2 +: 8]) begin
+                    if (mism < 3)
+                        $display("    sk byte %0d: got %02x exp %02x",
+                                 k2, w2[(k2 & 3)*8 +: 8], KAT0_SK[8*k2 +: 8]);
+                    mism = mism + 1;
+                    full_match = 1'b0;
+                end
+            end
+            if (full_match)
+                $display("    FULL pk/sk (1952+4032 bytes) match KAT0: PASS");
+            else
+                $display("    FULL pk/sk mismatch: %0d bytes", mism);
         end
     endtask
 
@@ -284,12 +322,17 @@ module tb_keygen_kat;
                     4: verify_pk_rho(KAT4_RHO);
                 endcase
 
+                // Full pk/sk byte-exact check against the hardcoded KAT0 reference
+                if (current_vec == 0)
+                    check_full_key(0);
+
                 // Dump t1 row0 bytes for cross-checking
                 if (current_vec == 0)
                     read_pk_t1_sample;
 
                                 rd(16'h0004, rd_data);
-                if (rd_data[1] && rd_data[0] == 1'b0 && rho_match) begin
+                if (rd_data[1] && rd_data[0] == 1'b0 && rho_match &&
+                    ((current_vec != 0) || full_match)) begin
                     $display("  Result: PASS");
                     kat_pass_cnt = kat_pass_cnt + 1;
                 end else begin
