@@ -65,6 +65,15 @@ module tb_mldsa_verify_kat;
 
                 reg verify_ok;
     integer vf_polls;
+    reg [63:0] vf_cyc, vf_cyc_latch, vf_prev;
+always @(posedge ACLK) begin
+    if (!ARESETn) begin vf_cyc <= 0; vf_cyc_latch <= 0; vf_prev <= 0; end
+    else begin
+        if (dut.u_verify.busy) vf_cyc <= vf_cyc + 1; else vf_cyc <= 0;
+        if (vf_prev && !dut.u_verify.busy) vf_cyc_latch <= vf_cyc;
+        vf_prev <= dut.u_verify.busy;
+    end
+end
     task wait_verify_done;
         reg [31:0] status;
         begin
@@ -159,12 +168,12 @@ module tb_mldsa_verify_kat;
             $display("  [vec %0d] Loading valid signature...", current_vec);
             wr(16'h0000, 32'h0000_0004);               wait_verify_done;
             if (verify_ok) begin
-                $display("  [vec %0d] VALID sig -> verify: PASS (valid=%b, %0d polls)",
-                         current_vec, verify_ok, vf_polls);
+                $display("  [vec %0d] VALID sig -> verify: PASS (valid=%b, %0d polls, cycles=%0d)",
+                         current_vec, verify_ok, vf_polls, vf_cyc_latch);
                 pass_cnt = pass_cnt + 1;
             end else begin
                 $display("  [vec %0d] VALID sig -> verify: FAIL (valid=%b, %0d polls)",
-                         current_vec, verify_ok, vf_polls);
+                         current_vec, verify_ok, vf_polls, vf_cyc_latch);
                 fail_cnt = fail_cnt + 1;
             end
 

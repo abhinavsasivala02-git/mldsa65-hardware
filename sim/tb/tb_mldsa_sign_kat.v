@@ -203,7 +203,16 @@ module tb_mldsa_sign_kat;
         end
     endtask
 
-                integer sign_pass_cnt;
+                reg [63:0] sg_cyc, sg_latch, sg_prev;
+always @(posedge ACLK) begin
+    if (!ARESETn) begin sg_cyc<=0; sg_latch<=0; sg_prev<=0; end
+    else begin
+        if (dut.u_sign.busy) sg_cyc <= sg_cyc + 1; else sg_cyc <= 0;
+        if (sg_prev && !dut.u_sign.busy) sg_latch <= sg_cyc;
+        sg_prev <= dut.u_sign.busy;
+    end
+end
+    integer sign_pass_cnt;
     integer sign_fail_cnt;
     integer current_vec;
 
@@ -250,7 +259,7 @@ module tb_mldsa_sign_kat;
                 $display("  FAIL: sign timeout or sig_valid not set");
                 sign_fail_cnt = sign_fail_cnt + 1;
             end else begin
-                $display("  Sign done after %0d polls, accepted kappa=%0d", sg_polls, dut.u_sign.kappa);
+                $display("  Sign done after %0d polls, accepted kappa=%0d, cycles=%0d", sg_polls, dut.u_sign.kappa, sg_latch);
                 dump_sig(current_vec);
                 dump_w(current_vec);
                 sign_pass_cnt = sign_pass_cnt + 1;

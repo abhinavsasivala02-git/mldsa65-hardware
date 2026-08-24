@@ -88,6 +88,14 @@ module tb_keygen_kat;
 
                     reg keygen_result;
     integer keygen_timeout;
+    integer kg_cyc;
+    always @(posedge ACLK) begin
+        if (!ARESETn) begin
+            kg_cyc <= 0;
+        end else if (dut.u_keygen.busy) begin
+            kg_cyc <= kg_cyc + 1;
+        end
+    end
 
     task wait_keygen_done;
         reg [31:0] status;
@@ -306,6 +314,7 @@ module tb_keygen_kat;
 
             if (keygen_result) begin
                 $display("  KeyGen completed after %0d polls", keygen_timeout);
+                $display("  KeyGen datapath cycles: %0d", kg_cyc);
 
                                 check_key_output;
 
