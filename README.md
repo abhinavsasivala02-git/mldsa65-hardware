@@ -50,23 +50,81 @@ The controllers **share** one set of data-path engines (time-multiplexed):
 `mldsa_top` muxes the controllers onto these engines (priority on the busy
 signal), so only one operation runs at a time.
 
-### KeyGen FSM (≈52 states)
-Broad flow: hash the seed → expand `s1`/`s2` → NTT(s1) → expand matrix `A`
-(SHAKE-128) → `A·s1` (pointwise-mult + INTT) → add `s2` → split `t1`/`t0` →
-pack `pk` and `sk`. **≈200,000 cycles (~2.0 ms @100 MHz).**
+### FSM diagrams
 
-### Sign FSM (≈65 states)
-Broad flow: unpack `sk` → NTT → `ExpandMask` (y) → `A·y` → decompose → challenge
-`c~` → `SampleInBall` (c) → compute & norm-check `z`, `r0`, `ct0` → build hints →
-pack `(c~,z,h)`. Any failed norm check jumps back to `ExpandMask` with the next
-`kappa`. **Variable latency** — proportional to the number of rejection attempts
-(observed `kappa` from 0 up to 75 in the KATs, i.e. 1–16 attempts), so it is the
-slowest and least predictable operation.
+**KeyGen controller — `keygen_ctrl` (52 states)**
 
-### Verify FSM (≈39 states)
-Broad flow: unpack signature → norm-check `z` → `SampleInBall` (c) → expand `A` →
-`A·z` (pmul + INTT) → subtract `c·t1·2^d` → `useHint` → hash `w1'` → compare to
-`c~`. **≈334,000 cycles (~3.3 ms @100 MHz).**
+```mermaid
+stateDiagram-v2
+    [*] --> KG_IDLE
+    KG_IDLE --> KG_HASH : start_keygen
+    KG_HASH --> KG_EXPS : SHAKE-256(seed) -> rho/rho'/K
+    KG_EXPS --> KG_NTT : sample s1, s2
+    KG_NTT --> KG_EXPA : NTT(s1)
+    KG_EXPA --> KG_PMUL : expand matrix A (SHAKE-128)
+    KG_PMUL --> KG_INTT : A·s1 accumulate
+    KG_INTT --> KG_ADD_S2 : INTT -> w
+    KG_ADD_S2 --> KG_P2R : w + s2
+    KG_P2R --> KG_NEXT_I : split t1/t0
+    KG_NEXT_I --> KG_EXPA : next matrix row
+    KG_NEXT_I --> KG_PACK_PK : all K rows done
+    KG_PACK_PK --> KG_PACK_SK : pack t1 -> pk
+    KG_PACK_SK --> KG_DONE : pack sk
+    KG_DONE --> [*]
+```
+
+**Sign controller — `sign_ctrl` (65 states, rejection loop)**
+
+```mermaid
+stateDiagram-v2
+    [*] --> SG_IDLE
+    SG_IDLE --> SG_UP : start_sign
+    SG_UP --> SG_NTT : unpack sk
+    SG_NTT --> SG_EM : NTT(s1,s2,t0)
+    SG_EM --> SG_MM : ExpandMask -> y
+    SG_MM --> SG_DECOMP : A·y
+    SG_DECOMP --> SG_CT : decompose -> w1/w0
+    SG_CT --> SG_SIB : challenge c~
+    SG_SIB --> SG_PM_C1 : SampleInBall -> c
+    SG_PM_C1 --> SG_Z_STORE : z = y + c·s1
+    SG_Z_STORE --> SG_R0_STORE : r0 = w0 - c·s2
+    SG_R0_STORE --> SG_CT0_STORE : ct0 = c·t0
+    SG_CT0_STORE --> SG_HINTS : all norms pass
+    SG_HINTS --> SG_PACK_CT : build hints (omega)
+    SG_PACK_CT --> SG_PACK_Z
+    SG_PACK_Z --> SG_PACK_H
+    SG_PACK_H --> SG_DONE
+    SG_DONE --> [*]
+    SG_CT0_STORE --> SG_REJECT : norm fail
+    SG_PM_C1 --> SG_REJECT : norm fail (z)
+    SG_REJECT --> SG_EM : kappa += L (retry)
+```
+
+**Verify controller — `verify_ctrl` (39 states)**
+
+```mermaid
+stateDiagram-v2
+    [*] --> VF_IDLE
+    VF_IDLE --> VF_UNPACK : start_verify
+    VF_UNPACK --> VF_CHECK_Z : unpack sig
+    VF_CHECK_Z --> VF_SIB : norm(z) ok
+    VF_SIB --> VF_EXPA : SampleInBall -> c
+    VF_EXPA --> VF_PMUL : expand matrix A
+    VF_PMUL --> VF_INTT_W : A·z
+    VF_INTT_W --> VF_T1_UNPACK : INTT -> w
+    VF_T1_UNPACK --> VF_NTT_T1 : NTT(t1)
+    VF_NTT_T1 --> VF_CT1_PMUL : c·t1·2^d
+    VF_CT1_PMUL --> VF_W_SUB : w - c·t1
+    VF_W_SUB --> VF_USEHINT : useHint -> w1'
+    VF_USEHINT --> VF_HASH : hash(mu || w1')
+    VF_HASH --> VF_COMPARE : vs c~
+    VF_COMPARE --> VF_DONE : match
+    VF_COMPARE --> VF_FAIL : mismatch
+    VF_DONE --> [*]
+    VF_FAIL --> [*]
+```
+
+### Latency
 
 | Operation | Cycles (@100 MHz) |
 |---|---|
@@ -74,6 +132,7 @@ Broad flow: unpack signature → norm-check `z` → `SampleInBall` (c) → expan
 | KeyGen | ≈200,000 (~2.0 ms) |
 | Verify | ≈334,000 (~3.3 ms) |
 | Sign | variable (rejection loop, kappa×per-attempt), ≈6–40 ms |
+
 
 ## Status (verified against official NIST KATs)
 
