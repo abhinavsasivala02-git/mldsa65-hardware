@@ -96,9 +96,8 @@ rtl/            RTL sources
   mem/          poly_ram, poly_ram_tdp
   mldsa/        mldsa_top (wrapper+FSM wiring), keygen_ctrl, sign_ctrl, verify_ctrl
 sim/            simulation
-  tb/           testbenches (keygen/sign/verify/ntt + top)
+  tb/           testbenches (keygen/sign/verify/ntt/top, plus joint & NIST end-to-end)
   mem/          KAT vectors (.vh), reference keys (.mem), NIST vectors (nist/)
-joint_design/   end-to-end testbenches (tb_mldsa_joint, tb_mldsa_nist_kat)
 syn/            synthesis (mldsa.tcl, syn_mldsa.tcl, constraints.sdc)
 NIST.FIPS.204.pdf  the FIPS 204 spec (reference)
 ```
@@ -142,7 +141,7 @@ xsim -R kg_sim
 ```
 - **Sign / Verify:** swap in `sim/tb/tb_mldsa_sign_kat.v` / `_verify_kat.v`, elaborate `xsim.tb_mldsa_sign_kat` / `...verify...`.
 - **NTT check:** NTT-only RTL with `-d USE_S1_DATA` on `sim/tb/tb_ntt_check.v`.
-- **NIST end-to-end:** `joint_design/tb_mldsa_nist_kat.v` with `-i rtl/pkg -i sim/mem -i sim/mem/nist`, elaborate `xsim.tb_mldsa_nist_kat`, run in 10-vector slices:
+- **NIST end-to-end:** `sim/tb/tb_mldsa_nist_kat.v` with `-i rtl/pkg -i sim/mem -i sim/mem/nist`, elaborate `xsim.tb_mldsa_nist_kat`, run in 10-vector slices:
   ```tcl
   xsim -R nist_sim -testplusarg NIST_START=0 -testplusarg NIST_END=9
   xsim -R nist_sim -testplusarg NIST_START=10 -testplusarg NIST_END=19
