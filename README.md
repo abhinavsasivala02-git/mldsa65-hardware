@@ -57,21 +57,15 @@ signal), so only one operation runs at a time.
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> KG_IDLE
-    KG_IDLE --> KG_HASH : start_keygen
-    KG_HASH --> KG_EXPS : SHAKE-256(seed) -> rho/rho'/K
-    KG_EXPS --> KG_NTT : sample s1, s2
-    KG_NTT --> KG_EXPA : NTT(s1)
-    KG_EXPA --> KG_PMUL : expand matrix A (SHAKE-128)
-    KG_PMUL --> KG_INTT : A·s1 accumulate
-    KG_INTT --> KG_ADD_S2 : INTT -> w
-    KG_ADD_S2 --> KG_P2R : w + s2
-    KG_P2R --> KG_NEXT_I : split t1/t0
-    KG_NEXT_I --> KG_EXPA : next matrix row
-    KG_NEXT_I --> KG_PACK_PK : all K rows done
-    KG_PACK_PK --> KG_PACK_SK : pack t1 -> pk
-    KG_PACK_SK --> KG_DONE : pack sk
-    KG_DONE --> [*]
+    [*] --> Seed
+    Seed --> Sample : SHAKE-256
+    Sample --> NTTt : s1/s2
+    NTTt --> ExpandA : NTT(s1)
+    ExpandA --> MatMul : define A
+    MatMul --> Add : A·s1
+    Add --> Split : +s2, t1/t0
+    Split --> Pack : pk/sk
+    Pack --> [*]
 ```
 
 **Sign controller — `sign_ctrl` (65 states, rejection loop)**
@@ -79,27 +73,15 @@ stateDiagram-v2
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> SG_IDLE
-    SG_IDLE --> SG_UP : start_sign
-    SG_UP --> SG_NTT : unpack sk
-    SG_NTT --> SG_EM : NTT(s1,s2,t0)
-    SG_EM --> SG_MM : ExpandMask -> y
-    SG_MM --> SG_DECOMP : A·y
-    SG_DECOMP --> SG_CT : decompose -> w1/w0
-    SG_CT --> SG_SIB : challenge c~
-    SG_SIB --> SG_PM_C1 : SampleInBall -> c
-    SG_PM_C1 --> SG_Z_STORE : z = y + c·s1
-    SG_Z_STORE --> SG_R0_STORE : r0 = w0 - c·s2
-    SG_R0_STORE --> SG_CT0_STORE : ct0 = c·t0
-    SG_CT0_STORE --> SG_HINTS : all norms pass
-    SG_HINTS --> SG_PACK_CT : build hints (omega)
-    SG_PACK_CT --> SG_PACK_Z
-    SG_PACK_Z --> SG_PACK_H
-    SG_PACK_H --> SG_DONE
-    SG_DONE --> [*]
-    SG_CT0_STORE --> SG_REJECT : norm fail
-    SG_PM_C1 --> SG_REJECT : norm fail (z)
-    SG_REJECT --> SG_EM : kappa += L (retry)
+    [*] --> Unpack
+    Unpack --> Mask : y
+    Mask --> MatMul : A·y
+    MatMul --> Challenge : w1
+    Challenge --> Norm : c
+    Norm --> Chk : z,r0,ct0
+    Chk --> Pack : pass
+    Pack --> [*]
+    Chk --> Mask : reject
 ```
 
 **Verify controller — `verify_ctrl` (39 states)**
@@ -107,24 +89,18 @@ stateDiagram-v2
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> VF_IDLE
-    VF_IDLE --> VF_UNPACK : start_verify
-    VF_UNPACK --> VF_CHECK_Z : unpack sig
-    VF_CHECK_Z --> VF_SIB : norm(z) ok
-    VF_SIB --> VF_EXPA : SampleInBall -> c
-    VF_EXPA --> VF_PMUL : expand matrix A
-    VF_PMUL --> VF_INTT_W : A·z
-    VF_INTT_W --> VF_T1_UNPACK : INTT -> w
-    VF_T1_UNPACK --> VF_NTT_T1 : NTT(t1)
-    VF_NTT_T1 --> VF_CT1_PMUL : c·t1·2^d
-    VF_CT1_PMUL --> VF_W_SUB : w - c·t1
-    VF_W_SUB --> VF_USEHINT : useHint -> w1'
-    VF_USEHINT --> VF_HASH : hash(mu || w1')
-    VF_HASH --> VF_COMPARE : vs c~
-    VF_COMPARE --> VF_DONE : match
-    VF_COMPARE --> VF_FAIL : mismatch
-    VF_DONE --> [*]
-    VF_FAIL --> [*]
+    [*] --> Unpack
+    Unpack --> Check : norm(z)
+    Check --> Expand : c
+    Expand --> MatMul : A·z
+    MatMul --> Intt : w
+    Intt --> UseHint : w−c·t1
+    UseHint --> Hash : w1'
+    Hash --> Comp : vs c~
+    Comp --> Done : match
+    Comp --> Fail : mismatch
+    Done --> [*]
+    Fail --> [*]
 ```
 
 ### Latency
