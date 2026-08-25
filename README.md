@@ -56,6 +56,7 @@ signal), so only one operation runs at a time.
 
 ```mermaid
 stateDiagram-v2
+    direction LR
     [*] --> KG_IDLE
     KG_IDLE --> KG_HASH : start_keygen
     KG_HASH --> KG_EXPS : SHAKE-256(seed) -> rho/rho'/K
@@ -77,6 +78,7 @@ stateDiagram-v2
 
 ```mermaid
 stateDiagram-v2
+    direction LR
     [*] --> SG_IDLE
     SG_IDLE --> SG_UP : start_sign
     SG_UP --> SG_NTT : unpack sk
@@ -104,6 +106,7 @@ stateDiagram-v2
 
 ```mermaid
 stateDiagram-v2
+    direction LR
     [*] --> VF_IDLE
     VF_IDLE --> VF_UNPACK : start_verify
     VF_UNPACK --> VF_CHECK_Z : unpack sig
