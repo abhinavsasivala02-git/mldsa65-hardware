@@ -98,7 +98,7 @@ rtl/            RTL sources
 sim/            simulation
   tb/           testbenches (keygen/sign/verify/ntt/top, plus joint & NIST end-to-end)
   mem/          KAT vectors (.vh), reference keys (.mem), NIST vectors (nist/)
-syn/            synthesis (mldsa.tcl, syn_mldsa.tcl, constraints.sdc)
+syn/            Cadence Genus synthesis (genus_mldsa.tcl, constraints.sdc)
 NIST.FIPS.204.pdf  the FIPS 204 spec (reference)
 ```
 
