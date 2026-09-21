@@ -1,0 +1,52 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2023.2 (win64) Build 4029153 Fri Oct 13 20:14:34 MDT 2023
+| Date         : Sat Sep 19 18:51:45 2026
+| Host         : Abhinav_S running 64-bit major release  (build 9200)
+| Command      : report_utilization -hierarchical -file syn/reports/utilization_hier.rpt
+| Design       : mldsa_top
+| Device       : xc7z020clg484-1
+| Speed File   : -1
+| Design State : Synthesized
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++----------------+-------------------+------------+------------+---------+------+-------+--------+--------+------------+
+|    Instance    |       Module      | Total LUTs | Logic LUTs | LUTRAMs | SRLs |  FFs  | RAMB36 | RAMB18 | DSP Blocks |
++----------------+-------------------+------------+------------+---------+------+-------+--------+--------+------------+
+| mldsa_top      |             (top) |      32714 |      21404 |   11236 |   74 | 15784 |     61 |      4 |         34 |
+|   (mldsa_top)  |             (top) |      13482 |       2246 |   11236 |    0 |  1605 |      0 |      0 |          0 |
+|   u_keygen     |       keygen_ctrl |       1831 |       1831 |       0 |    0 |  2484 |     18 |      0 |          7 |
+|     (u_keygen) |       keygen_ctrl |       1721 |       1721 |       0 |    0 |  2314 |     18 |      0 |          0 |
+|     u_pmul     | montgomery_mult_4 |        110 |        110 |       0 |    0 |   170 |      0 |      0 |          7 |
+|   u_ntt        |          ntt_core |        733 |        661 |       0 |   72 |   681 |      1 |      1 |         13 |
+|     (u_ntt)    |          ntt_core |        144 |        120 |       0 |   24 |   174 |      0 |      1 |          0 |
+|     u_bf       |    butterfly_unit |        353 |        306 |       0 |   47 |   310 |      0 |      0 |          7 |
+|       (u_bf)   |    butterfly_unit |         78 |         32 |       0 |   46 |   139 |      0 |      0 |          0 |
+|       u_add    |           mod_add |         53 |         53 |       0 |    0 |     0 |      0 |      0 |          0 |
+|       u_add2   |         mod_add_2 |         23 |         23 |       0 |    0 |     0 |      0 |      0 |          0 |
+|       u_mont   | montgomery_mult_3 |        199 |        198 |       0 |    1 |   171 |      0 |      0 |          7 |
+|     u_ram      |      poly_ram_tdp |        127 |        127 |       0 |    0 |     0 |      1 |      0 |          0 |
+|     u_sc_mont  | montgomery_mult_1 |        109 |        108 |       0 |    1 |   197 |      0 |      0 |          6 |
+|   u_shake      |     shake_unified |       6754 |       6754 |       0 |    0 |  6453 |      0 |      0 |          0 |
+|     (u_shake)  |     shake_unified |       1218 |       1218 |       0 |    0 |  3209 |      0 |      0 |          0 |
+|     u_keccak   |      keccak_f1600 |       5536 |       5536 |       0 |    0 |  3244 |      0 |      0 |          0 |
+|   u_sign       |         sign_ctrl |       7213 |       7212 |       0 |    1 |  2659 |     33 |      3 |          7 |
+|     (u_sign)   |         sign_ctrl |       7063 |       7063 |       0 |    0 |  2488 |     33 |      3 |          0 |
+|     u_pmul     | montgomery_mult_0 |        150 |        149 |       0 |    1 |   171 |      0 |      0 |          7 |
+|   u_verify     |       verify_ctrl |       2701 |       2700 |       0 |    1 |  1902 |      9 |      0 |          7 |
+|     (u_verify) |       verify_ctrl |       2347 |       2347 |       0 |    0 |  1734 |      9 |      0 |          0 |
+|     u_pmul     |   montgomery_mult |        126 |        125 |       0 |    1 |   168 |      0 |      0 |          7 |
+|     u_uh       |          use_hint |        228 |        228 |       0 |    0 |     0 |      0 |      0 |          0 |
+|       u_dec    |         decompose |        228 |        228 |       0 |    0 |     0 |      0 |      0 |          0 |
++----------------+-------------------+------------+------------+---------+------+-------+--------+--------+------------+
+
+

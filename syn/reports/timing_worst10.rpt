@@ -1,0 +1,48 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2023.2 (win64) Build 4029153 Fri Oct 13 20:14:34 MDT 2023
+| Date         : Sat Sep 19 18:52:08 2026
+| Host         : Abhinav_S running 64-bit major release  (build 9200)
+| Command      : report_timing -sort_by group -max_paths 10 -path_type summary -file syn/reports/timing_worst10.rpt
+| Design       : mldsa_top
+| Device       : 7z020-clg484
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+| Design State : Synthesized
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Startpoint                     Endpoint                       Slack(ns)     
+----------------------------------------------------------------------------
+u_verify/spad_reg_3_2/CLKBWRCLK
+                               u_verify/shake_wr_lane_data_reg[60]/D
+                                                              2.838         
+u_verify/spad_reg_3_2/CLKBWRCLK
+                               u_verify/shake_wr_lane_data_reg[61]/D
+                                                              2.838         
+u_verify/spad_reg_3_2/CLKBWRCLK
+                               u_verify/w1_lane_data_reg[0]/D 2.838         
+u_verify/spad_reg_3_2/CLKBWRCLK
+                               u_verify/w1_lane_data_reg[12]/D
+                                                              2.838         
+u_verify/spad_reg_3_2/CLKBWRCLK
+                               u_verify/w1_lane_data_reg[16]/D
+                                                              2.838         
+u_verify/spad_reg_3_2/CLKBWRCLK
+                               u_verify/w1_lane_data_reg[20]/D
+                                                              2.838         
+u_verify/spad_reg_3_2/CLKBWRCLK
+                               u_verify/w1_lane_data_reg[24]/D
+                                                              2.838         
+u_verify/spad_reg_3_2/CLKBWRCLK
+                               u_verify/w1_lane_data_reg[28]/D
+                                                              2.838         
+u_verify/spad_reg_3_2/CLKBWRCLK
+                               u_verify/w1_lane_data_reg[32]/D
+                                                              2.838         
+u_verify/spad_reg_3_2/CLKBWRCLK
+                               u_verify/w1_lane_data_reg[36]/D
+                                                              2.838         
+
+
+

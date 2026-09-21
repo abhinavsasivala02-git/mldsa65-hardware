@@ -1,0 +1,48 @@
+# ---- Vivado / xsim build output -------------------------------------------
+xsim/
+xsim.dir/
+.Xil/
+*.jou
+*.log
+*.pb
+*.wdb
+*.vcd
+*.str
+xsim_files.txt
+xsim_tb_files.txt
+xelab.*
+xvlog.*
+webtalk*
+vivado*.backup.*
+work/
+synth_project/
+
+# ---- Synthesis ------------------------------------------------------------
+# Text reports are kept; checkpoints are large regenerable binaries.
+*.dcp
+syn/reports/*.dcp
+
+# ---- Simulation dumps -----------------------------------------------------
+# Testbenches write key/signature dumps and debug traces to the run directory.
+# Reference vectors live in tb/ and tb/nist/ and are tracked; these are not.
+/pk_*.hex
+/sk_*.hex
+/sig_*.hex
+/joint_sig_*.hex
+/w_*.txt
+/vf_*.txt
+/ct_*.txt
+/mm_*.txt
+/s128_*.txt
+/t0_raw_*.txt
+/h_inputs_*.txt
+/z_inputs_*.txt
+/dc_trace.txt
+/nist_results.txt
+
+# ---- Python / cocotb ------------------------------------------------------
+__pycache__/
+*.pyc
+sim_build/
+results.xml
+run.err
