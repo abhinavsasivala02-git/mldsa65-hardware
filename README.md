@@ -7,6 +7,7 @@
 [![Standard](https://img.shields.io/badge/standard-FIPS%20204-1f6feb)](https://csrc.nist.gov/pubs/fips/204/final)
 [![Parameter set](https://img.shields.io/badge/parameter%20set-ML--DSA--65-8957e5)](#parameters)
 [![KAT](https://img.shields.io/badge/NIST%20KAT-20%2F20%20byte--exact-2ea043)](#verification)
+[![Wycheproof](https://img.shields.io/badge/Wycheproof-198%2F198-2ea043)](#verification)
 [![Target](https://img.shields.io/badge/XC7Z020-40%20MHz%20met-2ea043)](#results-on-hardware)
 [![HDL](https://img.shields.io/badge/HDL-Verilog--2001-555)](#source-layout)
 [![License](https://img.shields.io/badge/license-GPLv3-orange)](LICENSE)
@@ -57,6 +58,7 @@ Results recorded on Vivado 2023.2 / xsim against the RTL in this repository.
 | **Verify** | **30/30 checks** — 5 valid accepted, 25 malformed rejected |
 | **Joint** KeyGen→Sign→Verify | 5/5, no external reference data |
 | **NIST end-to-end** | **20/20 vectors** — pk, sk and σ byte-exact vs. `PQCsignKAT_4032.rsp` |
+| **Wycheproof** | **198/198** — all vectors from [C2SP/wycheproof](https://github.com/C2SP/wycheproof) `testvectors_v1/mldsa_65_verify_test.json` |
 
 The verify suite covers both directions — accepting what is valid, and rejecting what is not:
 
@@ -72,6 +74,19 @@ The verify suite covers both directions — accepting what is valid, and rejecti
 The last four are the ⊥ conditions of **Algorithm 15 (HintBitUnpack)**, reached through
 Algorithm 21 `sigDecode`. Well-formed KAT vectors never exercise them, so `verify_ctrl`'s
 `VF_HINT_CHK` state is tested explicitly with deliberately malformed hint sections.
+
+The Wycheproof suite adds 198 vectors (12 skipped: wrong pk/sig length or context > 255 B).
+Key cases it confirms:
+
+| Wycheproof check | tcIds | Result |
+|---|---|---|
+| All 79 valid signatures accepted | — | pass |
+| `z` coefficient exactly at ±(γ₁ − τη) rejected (‖z‖∞ bound) | 94, 139 | pass |
+| Corrupted c̃ bytes 32–47 rejected (full 384-bit comparison) | 195–210 | pass |
+| All other invalid signatures rejected | — | pass |
+
+tcIds 94/139 and 195–210 are the vectors that targeted the two bugs fixed in this
+repository (`VF_CHECK_Z` width truncation and `VF_COMPARE` partial c̃ comparison).
 
 ### The vectors are the real thing
 
@@ -153,6 +168,7 @@ tb/
   tb_mldsa_verify_kat.v    Verify KAT, incl. the malformed-hint reject cases
   tb_mldsa_joint.v         KeyGen → Sign → Verify, no external reference data
   tb_mldsa_nist_kat.v      NIST end-to-end, sliced via +NIST_START / +NIST_END
+  tb_wycheproof_verify.v   Wycheproof 198-vector verify suite
   tb_ntt_check.v           NTT transform dump (diagnostic, does not self-check)
   tb_keccak.v              Keccak-f[1600] unit check
   tb_decompose_iso.v       Decompose unit check
