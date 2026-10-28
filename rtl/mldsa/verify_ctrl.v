@@ -405,17 +405,19 @@ module verify_ctrl (
 
                 // ||z||_inf norm check over all 5 polys (1280 coeffs)
                 VF_CHECK_Z: begin
-                    // addr presented at z_cnt -> data at z_cnt+1 (1-cycle latency)
-                    if (z_cnt <= 9'd1279) begin
+                    // addr presented at z_cnt -> data arrives at z_cnt+1 (1-cycle latency)
+                    // z_cnt runs 0..1281: addr phase 0..1279, check phase 2..1281,
+                    // decision at 1282 (one cycle after the last check settles z_fail)
+                    if (z_cnt <= 11'd1279) begin
                         sp_rd_addr <= base_addr(SP_Z + z_cnt[10:8]) + z_cnt[7:0];
                     end
-                    if (z_cnt >= 9'd2 && z_cnt <= 9'd1281) begin
+                    if (z_cnt >= 11'd2 && z_cnt <= 11'd1281) begin
                         if (!((sp_rd_data < NORM_BOUND) || (sp_rd_data > Q_MINUS_BOUND)))
                             z_fail <= 1'b1;
                     end
-                    if (z_cnt == 9'd1281) begin
+                    if (z_cnt == 11'd1282) begin
                         if (z_fail) begin
-                            z_cnt <= 9'd0;
+                            z_cnt <= 11'd0;
                             state <= VF_FAIL;
                         end else begin
                             z_norm_ok <= 1'b1;
@@ -426,12 +428,12 @@ module verify_ctrl (
                             ntt_cnt   <= 4'd5;
                             ntt_ret   <= VF_SIB_INIT;
                             coeff_cnt <= 9'd0;
-                            z_cnt     <= 9'd0;
+                            z_cnt     <= 11'd0;
                             sub       <= 6'd0;
                             state     <= VF_HINT_CHK;
                         end
                     end else begin
-                        z_cnt <= z_cnt + 9'd1;
+                        z_cnt <= z_cnt + 11'd1;
                     end
                 end
 
@@ -1303,7 +1305,7 @@ module verify_ctrl (
                 end
 
                 VF_COMPARE: begin
-                    if (z_norm_ok && (c_tilde_cap[255:0] == c_tilde_comp[255:0]))
+                    if (z_norm_ok && (c_tilde_cap == c_tilde_comp))
                         state <= VF_DONE;
                     else
                         state <= VF_FAIL;
